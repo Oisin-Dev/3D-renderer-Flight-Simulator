@@ -1,3 +1,6 @@
+#Wireframe rendered cube with camera controls
+
+
 import pygame
 import numpy as np
 from math import sin, cos
@@ -9,7 +12,7 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("3D Cube with Camera Controls")
 clock = pygame.time.Clock()
 
-# Cube verticies
+# Cube vertices
 points = [
     np.array([-1, -1, -1]),
     np.array([1, -1, -1]),
@@ -21,21 +24,11 @@ points = [
     np.array([-1, 1, 1])
 ]
 
-faces = [
-    (0, 1, 2, 3), #BK
-    (4, 5, 6, 7), #F
-    (0, 4, 5, 1), #BT
-    (3, 7, 6, 2), #T
-    (0, 3, 7, 4), #L
-    (1, 5, 6, 2) #R
+edges = [
+    (0, 1), (1, 2), (2, 3), (3, 0),
+    (4, 5), (5, 6), (6, 7), (7, 4),
+    (0, 4), (1, 5), (2, 6), (3, 7)
 ]
-
-colours = [
-  (255, 0, 0),
-  (0, 255, 0),
-  (0, 0, 255),
-  (255, 255, 0),
-  (255, 0, 255)]
 
 # Camera setup
 camera_pos = np.array([0.0, 0.0, -5.0])
@@ -76,7 +69,7 @@ def project(point):
 # Main loop
 running = True
 while running:
-    dt = clock.tick(30)
+    dt = clock.tick(60)
     screen.fill((255, 255, 255))
 
     # Handle events
@@ -105,13 +98,13 @@ while running:
 
     # Camera rotation
     if keys[pygame.K_LEFT]:
-        camera_yaw += turn_speed
-    if keys[pygame.K_RIGHT]:
         camera_yaw -= turn_speed
+    if keys[pygame.K_RIGHT]:
+        camera_yaw += turn_speed
     if keys[pygame.K_UP]:
-        camera_pitch -= turn_speed
-    if keys[pygame.K_DOWN]:
         camera_pitch += turn_speed
+    if keys[pygame.K_DOWN]:
+        camera_pitch -= turn_speed
 
     # Clamp pitch
     camera_pitch = np.clip(camera_pitch, -np.pi / 2 + 0.01, np.pi / 2 - 0.01)
@@ -130,39 +123,14 @@ while running:
         transformed.append(proj)
 
     # Draw cube
-    for face in faces:
-      idx0, idx1, idx2, idx3 = face
-      p0 = transformed[idx0]
-      p1 = transformed[idx1]
-      p2 = transformed[idx2]
-      p3 = transformed[idx3]
+    for edge in edges:
+        p1 = transformed[edge[0]]
+        p2 = transformed[edge[1]]
+        if p1 is not None and p2 is not None:
+            pygame.draw.line(screen, (0, 0, 0), p1, p2, 2)
 
-      if None in (p0, p1, p2, p3):
-        continue
-        
-      v0 = camera_matrix @ (points[idx0] - camera_pos)
-      v1 = camera_matrix @ (points[idx1] - camera_pos)
-      v2 = camera_matrix @ (points[idx2] - camera_pos)
-        
-      a = v1 - v0
-      b = v2 - v0
-      normal = np.cross(a,b)
-        
-      if normal[2] >= 0:
-        continue
-      
-      projected = []
-      for idx in [idx0, idx1, idx2, idx3]:
-        cam_space = camera_matrix @ (points[idx] - camera_pos)
-        if cam_space[2] <= 0:
-          break
-        f= 200/ cam_space[2]
-        x = int(cam_space[0]*f+WIDTH /2)
-        y = int(cam_space[1]*f+HEIGHT /2)
-        projected.append((x,y))
-      else:
-        pygame.draw.polygon(screen, colours[idx], projected)
-
-      pygame.display.update()
+    pygame.display.update()
 
 pygame.quit()
+
+
