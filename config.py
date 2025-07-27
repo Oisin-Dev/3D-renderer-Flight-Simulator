@@ -1,0 +1,17 @@
+# config.py
+"""Configuration constants for the game."""
+WIDTH, HEIGHT = 1900, 1000
+FOV = 200
+MOVE_SPEED = 5
+TURN_SPEED = 2
+LINE_HEIGHT = 20
+FONT_NAME = 'Bahnschrift'
+FONT_SIZE = 15
+TEXT_COLOR = (255, 0, 0)
+BG_COLOR = (242,240,239)
+CUBE_COLOR = (0, 0, 0)
+EDGE_CLIP = 5000
+CAMERA_START_POS = [0.0, 0.0, -5.0]
+CAMERA_START_YAW = 0.0
+CAMERA_START_PITCH = 0.0
+FPS_CAP = 165 
