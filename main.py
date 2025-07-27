@@ -2,6 +2,7 @@ import pygame
 import numpy as np
 from camera import Camera
 from config import *
+from input_handler import handle_input
 from math import sin, cos
 
 # === CONFIGURATION CONSTANTS ===
@@ -61,23 +62,15 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-    keys = pygame.key.get_pressed()
-
-    # Camera movement and rotation using delta time
-    forward_amt = keys[pygame.K_w] - keys[pygame.K_s]
-    right_amt = keys[pygame.K_d] - keys[pygame.K_a]
-    up_amt = keys[pygame.K_LSHIFT] - keys[pygame.K_SPACE]
+    # Use input handler
+    (forward_amt, right_amt, up_amt, yaw_amt, pitch_amt, should_reset_rot, should_reset_pos, should_quit) = handle_input()
     camera.move(forward_amt, right_amt, up_amt, dt)
-
-    yaw_amt = keys[pygame.K_LEFT] - keys[pygame.K_RIGHT]
-    pitch_amt = keys[pygame.K_DOWN] - keys[pygame.K_UP]
     camera.rotate(yaw_amt, pitch_amt, dt)
-
-    if keys[pygame.K_r]:
+    if should_reset_rot:
         camera.reset_rotation()
-    if keys[pygame.K_t]:
+    if should_reset_pos:
         camera.reset_position()
-    if keys[pygame.K_ESCAPE]:
+    if should_quit:
         running = False
 
     camera_matrix = camera.get_rotation_matrix()
