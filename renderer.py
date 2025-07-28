@@ -10,6 +10,9 @@ NEAR_PLANE = 0.1
 FAR_PLANE = 1000.0
 FOV_ANGLE = 90  # degrees
 
+# Colors
+TERRAIN_COLOR = (100, 150, 100)  # Green-ish color for terrain
+
 # Cube face definitions (each face is defined by 4 vertices)
 # Vertices are in clockwise order when viewed from outside the face
 faces = [
@@ -84,7 +87,7 @@ def calculate_face_depth(face_vertices, transformed_points):
             depths.append(transformed_points[vertex_index][2])
     return np.mean(depths) if depths else float('inf')
 
-def render_scene(screen, camera, points, edges, font, texts, x_pos, y_pos):
+def render_scene(screen, camera, points, edges, font, texts, x_pos, y_pos, terrain=None):
     screen.fill(BG_COLOR)
     camera_matrix = camera.get_rotation_matrix()
     
@@ -120,16 +123,47 @@ def render_scene(screen, camera, points, edges, font, texts, x_pos, y_pos):
             if valid_face:
                 # Calculate depth for sorting
                 depth = calculate_face_depth(face_vertices, original_points_3d)
-                visible_faces.append((face_2d, depth, face_index))
+                visible_faces.append((face_2d, depth, face_index, CUBE_COLOR))
+    
+    # Render terrain if provided
+    if terrain:
+        terrain_vertices = terrain.get_vertices()
+        terrain_faces = terrain.get_faces()
+        
+        # Transform terrain vertices
+        terrain_transformed = []
+        terrain_original_3d = []
+        for vertex in terrain_vertices:
+            relative = vertex - camera.position
+            camera_space = camera_matrix @ relative
+            terrain_original_3d.append(camera_space)
+            proj = project(camera_space)
+            terrain_transformed.append(proj)
+        
+        # Add terrain faces to rendering list
+        for face_vertices in terrain_faces:
+            # Check if all vertices are valid
+            face_2d = []
+            valid_face = True
+            for vertex_index in face_vertices:
+                if terrain_transformed[vertex_index] is None:
+                    valid_face = False
+                    break
+                face_2d.append(terrain_transformed[vertex_index])
+            
+            if valid_face:
+                # Calculate depth for sorting
+                depth = calculate_face_depth(face_vertices, terrain_original_3d)
+                visible_faces.append((face_2d, depth, -1, TERRAIN_COLOR))  # -1 for terrain faces
     
     # Sort faces by depth (back to front for proper rendering)
     visible_faces.sort(key=lambda x: x[1], reverse=True)
     
     # Render faces
-    for face_2d, depth, face_index in visible_faces:
+    for face_2d, depth, face_index, color in visible_faces:
         # For now, use wireframe rendering of faces
         # Later this can be easily changed to filled polygons
-        pygame.draw.polygon(screen, CUBE_COLOR, face_2d, 2)
+        pygame.draw.polygon(screen, color, face_2d, 2)
     
     # Render UI text
     for i, text in enumerate(texts):

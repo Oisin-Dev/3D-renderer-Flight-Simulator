@@ -4,6 +4,7 @@ from camera import Camera
 from config import *
 from input_handler import handle_input
 from renderer import render_scene
+from terrain import Terrain
 from math import sin, cos
 
 # === CONFIGURATION CONSTANTS ===
@@ -46,6 +47,9 @@ edges = [
 # Camera setup
 camera = Camera()
 
+# Terrain setup
+terrain = Terrain(size=200, height=-10)  # Large flat terrain below the cube
+
 # Main loop
 running = True
 while running:
@@ -56,8 +60,19 @@ while running:
             running = False
 
     (forward_amt, right_amt, up_amt, yaw_amt, pitch_amt, should_reset_rot, should_reset_pos, should_quit) = handle_input()
+    
+    # Apply movement
     camera.move(forward_amt, right_amt, up_amt, dt)
     camera.rotate(yaw_amt, pitch_amt, dt)
+    
+    # Smart collision detection - only prevent flying below terrain
+    terrain_height = terrain.get_terrain_height_at(camera.position[0], camera.position[2])
+    min_height = terrain_height - 2  # Keep 2 units above terrain for safety
+    
+    # Only apply collision if we're below the minimum height
+    if camera.position[1] > min_height:
+        camera.position[1] = min_height
+    
     if should_reset_rot:
         camera.reset_rotation()
     if should_reset_pos:
@@ -65,7 +80,7 @@ while running:
     if should_quit:
         running = False
 
-    render_scene(screen, camera, points, edges, font, texts, x_pos, y_pos)
+    render_scene(screen, camera, points, edges, font, texts, x_pos, y_pos, terrain)
 
     framerate = int(clock.get_fps())
     pygame.display.set_caption(f"Running at {framerate} fps.")
